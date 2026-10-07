@@ -135,7 +135,7 @@ hf_bge_embeddings = HuggingFaceBgeEmbeddings(
 )
 
 llm = ChatDeepSeek(
-    model="deepseek-chat", 
+    model="deepseek-flash", 
     temperature=0.1, 
     api_key=os.getenv("DEEPSEEK_API_KEY")
 )

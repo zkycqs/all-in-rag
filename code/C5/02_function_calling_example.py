@@ -10,7 +10,7 @@ client = OpenAI(
 # 定义一个函数，用于发送消息并获取模型的响应
 def send_messages(messages, tools=None):
     response = client.chat.completions.create(
-        model="deepseek-chat",
+        model="deepseek-flash",
         messages=messages,
         tools=tools,
         tool_choice="auto",  # 让模型自主决定是否调用工具

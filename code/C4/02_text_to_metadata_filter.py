@@ -73,7 +73,7 @@ metadata_field_info = [
 
 # 4. 创建自查询检索器
 llm = ChatDeepSeek(
-    model="deepseek-chat", 
+    model="deepseek-flash", 
     temperature=0, 
     api_key=os.getenv("DEEPSEEK_API_KEY")
     )

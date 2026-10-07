@@ -7,7 +7,7 @@ from langchain_deepseek import ChatDeepSeek
 
 # 初始化 LLM
 llm = ChatDeepSeek(
-    model="deepseek-chat",
+    model="deepseek-flash",
     api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 

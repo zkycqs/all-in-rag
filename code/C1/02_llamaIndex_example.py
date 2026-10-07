@@ -9,14 +9,14 @@ load_dotenv()
 
 # 使用 AIHubmix
 Settings.llm = OpenAILike(
-    model="glm-4.7-flash-free",
+    model="deepseek-flash",
     api_key=os.getenv("DEEPSEEK_API_KEY"),
-    api_base="https://aihubmix.com/v1",
+    api_base="https://api.deepseek.com",
     is_chat_model=True
 )
 
 # Settings.llm = OpenAI(
-#     model="deepseek-chat",
+#     model="deepseek-flash",
 #     api_key=os.getenv("DEEPSEEK_API_KEY"),
 #     api_base="https://api.deepseek.com"
 # )

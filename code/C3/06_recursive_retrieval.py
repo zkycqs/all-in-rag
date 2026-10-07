@@ -13,7 +13,7 @@ from llama_index.core import Settings
 load_dotenv()
 
 # 配置模型
-Settings.llm = DeepSeek(model="deepseek-chat", api_key=os.getenv("DEEPSEEK_API_KEY"))
+Settings.llm = DeepSeek(model="deepseek-flash", api_key=os.getenv("DEEPSEEK_API_KEY"))
 Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-zh-v1.5")
 
 # 1.加载数据并为每个工作表创建查询引擎和摘要节点

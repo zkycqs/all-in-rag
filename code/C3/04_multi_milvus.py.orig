@@ -13,7 +13,7 @@ MODEL_NAME = "BAAI/bge-base-en-v1.5"
 MODEL_PATH = "../../models/bge/Visualized_base_en_v1.5.pth"
 DATA_DIR = "../../data/C3"
 COLLECTION_NAME = "multimodal_demo"
-MILVUS_URI = "./milvus_multimodal.db"
+MILVUS_URI = "http://localhost:19530"
 
 # 2. 定义工具 (编码器和可视化函数)
 class Encoder:
@@ -155,7 +155,7 @@ else:
     combined_image_path = os.path.join(DATA_DIR, "search_result.png")
     cv2.imwrite(combined_image_path, panoramic_image)
     print(f"结果图像已保存到: {combined_image_path}")
-    # Image.open(combined_image_path).show()  # 服务器无图形界面，已禁用
+    Image.open(combined_image_path).show()
 
 milvus_client.release_collection(collection_name=COLLECTION_NAME)
 print(f"已从内存中释放 Collection: '{COLLECTION_NAME}'")

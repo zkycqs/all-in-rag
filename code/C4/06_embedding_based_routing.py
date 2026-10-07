@@ -21,7 +21,7 @@ print(f"已定义 {len(route_names)} 个路由: {', '.join(route_names)}")
 
 # 2. 定义不同路由的目标链
 llm = ChatDeepSeek(
-    model="deepseek-chat", 
+    model="deepseek-flash", 
     temperature=0, 
     api_key=os.getenv("DEEPSEEK_API_KEY")
     )

@@ -5,7 +5,7 @@ from langchain_deepseek import ChatDeepSeek
 from langchain_core.runnables import RunnableBranch
 
 llm = ChatDeepSeek(
-    model="deepseek-chat", 
+    model="deepseek-flash", 
     temperature=0, 
     api_key=os.getenv("DEEPSEEK_API_KEY")
     )

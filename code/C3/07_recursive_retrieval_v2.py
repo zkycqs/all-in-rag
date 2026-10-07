@@ -11,7 +11,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 load_dotenv()
 
 # 配置模型
-Settings.llm = DeepSeek(model="deepseek-chat", api_key=os.getenv("DEEPSEEK_API_KEY"))
+Settings.llm = DeepSeek(model="deepseek-flash", api_key=os.getenv("DEEPSEEK_API_KEY"))
 Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-zh-v1.5")
 
 # 1. 加载和预处理数据
