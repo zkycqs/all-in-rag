@@ -15,7 +15,7 @@ class RAGConfig:
 
     # 模型配置
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
-    llm_model: str = "kimi-k2-0711-preview"
+    llm_model: str = "deepseek-flash"  # ★ 已从 kimi-k2-0711-preview 换成 DeepSeek
 
     # 检索配置
     top_k: int = 3

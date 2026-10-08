@@ -16,6 +16,9 @@ class GraphRAGConfig:
     neo4j_database: str = "neo4j"
 
     # Milvus配置
+    # ★ Milvus Lite 适配：填本地文件路径（如 "./milvus_c9.db"）即走 Lite（无需 Docker）；
+    #   设为空字符串则回退到下面 host:port 连 Docker Standalone（原版行为）
+    milvus_uri: str = "./milvus_c9.db"
     milvus_host: str = "localhost"
     milvus_port: int = 19530
     milvus_collection_name: str = "cooking_knowledge"
@@ -23,7 +26,7 @@ class GraphRAGConfig:
 
     # 模型配置
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
-    llm_model: str = "kimi-k2-0711-preview"
+    llm_model: str = "deepseek-flash"  # ★ 已从 kimi-k2-0711-preview 换成 DeepSeek
 
     # 检索配置（LightRAG Round-robin策略）
     top_k: int = 5
@@ -59,6 +62,7 @@ class GraphRAGConfig:
             'neo4j_user': self.neo4j_user,
             'neo4j_password': self.neo4j_password,
             'neo4j_database': self.neo4j_database,
+            'milvus_uri': self.milvus_uri,
             'milvus_host': self.milvus_host,
             'milvus_port': self.milvus_port,
             'milvus_collection_name': self.milvus_collection_name,

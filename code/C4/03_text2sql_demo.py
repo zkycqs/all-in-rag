@@ -24,7 +24,9 @@ def setup_demo():
     
     # 初始化Text2SQL代理
     print("初始化Text2SQL代理...")
-    agent = SimpleText2SQLAgent(api_key=api_key)
+    # ★ Milvus Lite 适配：知识库改用本地文件，不再依赖 Docker Standalone（原版默认 http://localhost:19530）
+    kb_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "text2sql_kb.db")
+    agent = SimpleText2SQLAgent(milvus_uri=kb_db, api_key=api_key)
     
     # 连接数据库
     print("连接数据库...")

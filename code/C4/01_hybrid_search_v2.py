@@ -9,7 +9,7 @@ from pymilvus import connections, MilvusClient, FieldSchema, CollectionSchema, D
 
 # 1. 初始化设置
 COLLECTION_NAME = "dragon_siglip_demo"
-MILVUS_URI = "http://localhost:19530"  # 服务器模式
+MILVUS_URI = "./milvus_dragon.db"  # ★ 已改为 Milvus Lite 本地文件（原版: "http://localhost:19530" 服务器模式）
 DATA_PATH = "../../data/C4/metadata/dragon.json"  # 相对路径
 BATCH_SIZE = 50
 
@@ -32,10 +32,13 @@ class SigLIPEmbeddingFunction:
         self.model.eval()
         
         # 初始化TF-IDF作为稀疏向量生成器
+        # ★ 中文适配：默认的 token_pattern 靠空格切词，中文没有空格，
+        #   整句会被当成一个 token（查询"悬崖上的巨龙"直接查不到，非零元素 0 个，稀疏检索全空）。
+        #   改用字符级 n-gram：单字保召回（"龙"能命中中华金龙/霸王龙），双字保精度（"巨龙""悬崖"）。
         self.tfidf_vectorizer = TfidfVectorizer(
             max_features=10000,  # 限制词汇表大小以节省空间
-            stop_words='english',
-            ngram_range=(1, 2)
+            analyzer='char',     # ★ 字符级切分（原版是默认的词级 token_pattern）
+            ngram_range=(1, 2)   # ★ 单字 + 双字
         )
         self.tfidf_fitted = False
         
@@ -128,7 +131,7 @@ if milvus_client.has_collection(COLLECTION_NAME):
     milvus_client.drop_collection(COLLECTION_NAME)
 
 fields = [
-    FieldSchema(name="pk", dtype=DataType.VARCHAR, is_primary=True, auto_id=True, max_length=100),
+    FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),  # ★ Lite 里 auto_id 主键必须是 INT64，原版写的是 VARCHAR
     FieldSchema(name="img_id", dtype=DataType.VARCHAR, max_length=100),
     FieldSchema(name="path", dtype=DataType.VARCHAR, max_length=256),
     FieldSchema(name="title", dtype=DataType.VARCHAR, max_length=256),
@@ -305,8 +308,10 @@ print("\n--- [混合] 稀疏+密集向量搜索结果 ---")
 rerank = RRFRanker(k=60)
 
 # 创建搜索请求
-dense_req = AnnSearchRequest([dense_vec], "dense_vector", search_params, limit=top_k)
-sparse_req = AnnSearchRequest([sparse_dict], "sparse_vector", search_params, limit=top_k)
+# ★ 原版这两条都没传 expr，而 hybrid_search 本身又不接受 expr 参数（pymilvus 2.6），
+#   所以过滤只能挂在这里 —— 挂到每条 AnnSearchRequest 上，效果等价于单路检索的 expr
+dense_req = AnnSearchRequest([dense_vec], "dense_vector", search_params, limit=top_k, expr=search_filter)
+sparse_req = AnnSearchRequest([sparse_dict], "sparse_vector", search_params, limit=top_k, expr=search_filter)
 
 # 执行混合搜索
 results = collection.hybrid_search(

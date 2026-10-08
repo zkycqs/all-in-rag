@@ -7,7 +7,9 @@ import logging
 from typing import List
 
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_community.chat_models.moonshot import MoonshotChat
+# ★ 已从 MoonshotChat 换成 ChatOpenAI：MoonshotChat 把地址写死在 api.moonshot.cn，
+#    传 base_url 会被静默忽略，想换服务商必须用 ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -17,7 +19,7 @@ logger = logging.getLogger(__name__)
 class GenerationIntegrationModule:
     """生成集成模块 - 负责LLM集成和回答生成"""
     
-    def __init__(self, model_name: str = "kimi-k2-0711-preview", temperature: float = 0.1, max_tokens: int = 2048):
+    def __init__(self, model_name: str = "deepseek-flash", temperature: float = 0.1, max_tokens: int = 2048):
         """
         初始化生成集成模块
         
@@ -36,15 +38,18 @@ class GenerationIntegrationModule:
         """初始化大语言模型"""
         logger.info(f"正在初始化LLM: {self.model_name}")
 
-        api_key = os.getenv("MOONSHOT_API_KEY")
+        # ★ DeepSeek（OpenAI 兼容）。想换回月之暗面：base_url 改 "https://api.moonshot.cn/v1"，
+        #   key 改用 MOONSHOT_API_KEY，model 改 "kimi-k2-0711-preview"
+        api_key = os.getenv("DEEPSEEK_API_KEY")
         if not api_key:
-            raise ValueError("请设置 MOONSHOT_API_KEY 环境变量")
+            raise ValueError("请设置 DEEPSEEK_API_KEY 环境变量")
 
-        self.llm = MoonshotChat(
+        self.llm = ChatOpenAI(
             model=self.model_name,
+            api_key=api_key,
+            base_url="https://api.deepseek.com",
             temperature=self.temperature,
-            max_tokens=self.max_tokens,
-            moonshot_api_key=api_key
+            max_tokens=self.max_tokens
         )
         
         logger.info("LLM初始化完成")

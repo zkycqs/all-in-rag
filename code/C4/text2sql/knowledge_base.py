@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from typing import List, Dict, Any
 from pymilvus import MilvusClient, FieldSchema, CollectionSchema, DataType
 from pymilvus.model.hybrid import BGEM3EmbeddingFunction
@@ -8,9 +9,23 @@ from pymilvus.model.hybrid import BGEM3EmbeddingFunction
 class SimpleKnowledgeBase:
     """知识库"""
     
-    def __init__(self, milvus_uri: str = "http://localhost:19530"):
+    def __init__(self, milvus_uri: str = "./text2sql_kb.db"):
+        """★ 默认改用 Milvus Lite 本地文件（原版是 http://localhost:19530）"""
         self.milvus_uri = milvus_uri
-        self.client = MilvusClient(uri=milvus_uri)
+        # ★ Milvus Lite 偶发启动竞态：服务端还没就绪客户端就超时（报 socket 不存在），实测重试必成功
+        self.client = None
+        last_err = None
+        for attempt in range(1, 4):
+            try:
+                self.client = MilvusClient(uri=milvus_uri, timeout=30)
+                self.client.list_collections()
+                break
+            except Exception as e:
+                last_err = e
+                print(f"Milvus 连接失败（第 {attempt}/3 次）: {e}")
+                time.sleep(3)
+        if self.client is None:
+            raise last_err
         self.embedding_function = BGEM3EmbeddingFunction(use_fp16=False, device="cpu")
         self.collection_name = "text2sql_kb"
         self._setup_collection()
@@ -22,7 +37,7 @@ class SimpleKnowledgeBase:
         
         # 定义字段
         fields = [
-            FieldSchema(name="pk", dtype=DataType.VARCHAR, is_primary=True, auto_id=True, max_length=100),
+            FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),  # ★ Lite 里 auto_id 主键必须 INT64，原版是 VARCHAR
             FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=4096),
             FieldSchema(name="type", dtype=DataType.VARCHAR, max_length=32),  # ddl, qsql, description
             FieldSchema(name="dense_vector", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_function.dim["dense"])

@@ -66,7 +66,12 @@ async def main():
     # 4. 执行响应评估对比
     print("开始执行响应评估对比...")
     evaluators = {"faithfulness": faithfulness_evaluator, "relevancy": relevancy_evaluator}
-    queries = response_eval_dataset.queries
+    # ★ 修复：QueryResponseDataset.queries 是 dict（query_id -> 问题文本），
+    #   直接把它传给 aevaluate_queries 时，迭代到的是 **键（一串 UUID）**，
+    #   等于拿 UUID 当问题去问检索器 → LLM 只能答"上下文里没有相关信息"
+    #   → FaithfulnessEvaluator 判定"回答不被上下文支持" → 忠实度必然 0%
+    #   必须取 .values() 才是真正的问题文本
+    queries = list(response_eval_dataset.queries.values())
 
     # 句子窗口检索响应评估
     print("\n=== 评估句子窗口检索 ===")

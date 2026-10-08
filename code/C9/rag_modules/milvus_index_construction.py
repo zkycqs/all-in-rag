@@ -21,7 +21,8 @@ class MilvusIndexConstructionModule:
                  port: int = 19530,
                  collection_name: str = "cooking_knowledge",
                  dimension: int = 512,
-                 model_name: str = "BAAI/bge-small-zh-v1.5"):
+                 model_name: str = "BAAI/bge-small-zh-v1.5",
+                 uri: Optional[str] = None):
         """
         初始化Milvus索引构建模块
 
@@ -31,12 +32,14 @@ class MilvusIndexConstructionModule:
             collection_name: 集合名称
             dimension: 向量维度
             model_name: 嵌入模型名称
+            uri: （可选）显式指定 Milvus 连接地址；给本地文件路径即走 Milvus Lite
         """
         self.host = host
         self.port = port
         self.collection_name = collection_name
         self.dimension = dimension
         self.model_name = model_name
+        self.uri = uri  # ★ None 则按 host:port 连 Standalone；给本地文件路径则走 Milvus Lite
         
         self.client = None
         self.embeddings = None
@@ -62,19 +65,23 @@ class MilvusIndexConstructionModule:
     
     def _setup_client(self):
         """初始化Milvus客户端"""
-        try:
-            self.client = MilvusClient(
-                uri=f"http://{self.host}:{self.port}"
-            )
-            logger.info(f"已连接到Milvus服务器: {self.host}:{self.port}")
-            
-            # 测试连接
-            collections = self.client.list_collections()
-            logger.info(f"连接成功，当前集合: {collections}")
-            
-        except Exception as e:
-            logger.error(f"连接Milvus失败: {e}")
-            raise
+        # ★ Milvus Lite 适配：显式 uri 优先（本地文件路径），否则回退到 Standalone 的 host:port
+        target = self.uri if self.uri else f"http://{self.host}:{self.port}"
+        # ★ Milvus Lite 偶发启动竞态：服务端还没就绪客户端就超时（报 socket 不存在），
+        #   实测重试必成功，所以这里加 3 次重试 + 加长 timeout
+        last_err = None
+        for attempt in range(1, 4):
+            try:
+                self.client = MilvusClient(uri=target, timeout=30)
+                collections = self.client.list_collections()
+                logger.info(f"已连接到Milvus: {target}，当前集合: {collections}")
+                return
+            except Exception as e:
+                last_err = e
+                logger.warning(f"Milvus 连接失败（第 {attempt}/3 次）: {e}")
+                time.sleep(3)
+        logger.error(f"连接Milvus失败: {last_err}")
+        raise last_err
     
     def _setup_embeddings(self):
         """初始化嵌入模型"""
@@ -176,12 +183,10 @@ class MilvusIndexConstructionModule:
             # 添加向量字段索引
             index_params.add_index(
                 field_name="vector",
-                index_type="HNSW",
+                # ★ 原版是 HNSW，但 Milvus Lite 只支持 FLAT / IVF_FLAT / AUTOINDEX
+                index_type="AUTOINDEX",
                 metric_type="COSINE",
-                params={
-                    "M": 16,
-                    "efConstruction": 200
-                }
+                params={}
             )
             
             self.client.create_index(

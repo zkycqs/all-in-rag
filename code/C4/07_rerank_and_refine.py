@@ -143,7 +143,17 @@ llm = ChatDeepSeek(
 # 1. 加载和处理文档
 loader = TextLoader("../../data/C4/txt/ai.txt", encoding="utf-8")
 documents = loader.load()
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+# ★ 修复「输出重复」：chunk_overlap=100 会让相邻块共享近百字文本
+#   （实测：块2↔块3 重叠 94 字、块3↔块4 重叠 91 字，总重叠 185 字）
+#   而 LLMChainExtractor 的语义是「把相关的原文照抄出来」，
+#   于是同一段文字会被两个块各返回一次 → 最终输出里重复出现。
+#   改法：减小 chunk_size、大幅降低 chunk_overlap，
+#   并显式指定中文标点作分隔符（默认分隔符面向英文，对中文不友好）
+text_splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
+    chunk_size=300,
+    chunk_overlap=20,
+)
 docs = text_splitter.split_documents(documents)
 
 # 2. 创建向量存储和基础检索器
